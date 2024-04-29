@@ -80,19 +80,3 @@ async def getuserlist():
         'code': 100,
         'msg': 'success'
     }
-
-@app.get('/getalllog')
-async def getalllog():
-    ws = websocket.WebSocket()
-    ws.connect(wsurl)
-    m = {
-        'cmd': 'getalllog',
-        'stn': True,
-        'deviceSn': 'ZXRL12098608'
-    }
-    ws.send(json.dumps(m))
-    ws.close()
-    return {
-        'code': 100,
-        'msg': 'success'
-    }
