@@ -1,18 +1,4 @@
-from websocket_server import WebsocketServer
 from dataclasses import dataclass
-
-@dataclass
-class DeviceStatus:
-    deviceSn: str
-    webSocket: WebsocketServer
-    client: any
-    status: int
-    
-    def __init__(self):
-        pass
-    
-    def __str__(self):
-        return f'DeviceStatus [deviceSn={self.deviceSn}, webSocket={self.webSocket}, status={self.status}]'
     
 @dataclass
 class UserInfo:
@@ -26,7 +12,7 @@ class UserInfo:
     def __init__(self):
         pass
     
-    def __str__(self):
+    def __repr__(self):
         return f'UserInfo [enrollId={self.enrollId}, name={self.name}, backupnum={self.backupnum}, admin={self.admin}, imagePath={self.imagePath}, record={self.record}]'
     
 @dataclass
@@ -38,7 +24,7 @@ class UserTemp:
     def __init__(self):
         pass
     
-    def __str__(self):
+    def __repr__(self):
         return f'UserTemp [enrollId={self.enrollId}, admin={self.admin}, backupnum={self.backupnum}]'
     
 # with db_session:

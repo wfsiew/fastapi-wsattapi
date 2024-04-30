@@ -20,7 +20,7 @@ class AccessDay(db.Entity):
     startTime5 = Required(str, max_len=20, column='start_time5')
     endTime5 = Required(str, max_len=20, column='end_time5')
     
-    def __str__(self):
+    def __repr__(self):
         return f'''AccessDay [id={self.id}, serial={self.serial}, name={self.name} 
         , startTime1={self.startTime1}, endTime1={self.endTime1}
         , startTime2={self.startTime2}, endTime1={self.endTime2}
@@ -41,7 +41,7 @@ class AccessWeek(db.Entity):
     friday = Required(int)
     saturday = Required(int)
     
-    def __str__(self):
+    def __repr__(self):
         return f'''AccessWeek [id={self.id}, serial={self.serial}, name={self.name}
         , monday={self.monday}, tuesday={self.tuesday}
         , wednesday={self.wednesday}, thursday={self.thursday}
@@ -53,7 +53,7 @@ class Device(db.Entity):
     serialNum = Required(str, max_len=50, column='serial_num')
     status = Required(int)
     
-    def __str__(self):
+    def __repr__(self):
         return f'Device [id={self.id}, serialNum={self.serialNum}, status={self.status}]'
     
 class EnrollInfo(db.Entity):
@@ -64,7 +64,7 @@ class EnrollInfo(db.Entity):
     imagePath = Optional(str, max_len=255, column='imagepath')
     signatures = Optional(str)
     
-    def __str__(self):
+    def __repr__(self):
         return f'EnrollInfo [id={self.id}, enrollId={self.enrollId}, backupnum={self.backupnum}, imagePath={self.imagePath}, signatures={self.signatures}]'
     
 class Person(db.Entity):
@@ -73,7 +73,7 @@ class Person(db.Entity):
     name = Optional(str, max_len=50)
     rollId = Optional(int, column='roll_id')
     
-    def __str__(self):
+    def __repr__(self):
         return f'Person [id={self.id}, name={self.name}, rollId={self.rollId}]'
     
 class Records(db.Entity):
@@ -91,24 +91,49 @@ class Records(db.Entity):
 db.generate_mapping(create_tables=True)
 
 @dataclass
+class DeviceModel:
+    id: int
+    serialNum: str
+    status: int
+    
+    def __init__(self):
+        pass
+        
+    @classmethod
+    def fromOrm(cls, device: Device):
+        o = DeviceModel()
+        o.id = device.id
+        o.serialNum = device.serialNum
+        o.status = device.status
+        return o
+
+@dataclass
 class EnrollInfoModel:
-    id = int
-    enrollId = int
-    backupnum = int
-    imagePath = str
-    signatures = str
+    id: int
+    enrollId: int
+    backupnum: int
+    imagePath: str
+    signatures: str
     
     def __init__(self):
         pass
     
 @dataclass
 class PersonModel:
-    id = int
-    name = str
-    rollId = int
+    id: int
+    name: str
+    rollId: int
     
     def __init__(self):
         pass
+    
+    @classmethod
+    def fromOrm(cls, person: Person):
+        o = PersonModel()
+        o.id = person.id
+        o.name = person.name
+        o.rollId = person.rollId
+        return o
     
 @dataclass
 class RecordsModel:

@@ -1,12 +1,13 @@
-from pony.orm import Database, db_session
+from typing import List
+from pony.orm import db_session
 from app.entities import Device
 
 class DeviceService:
     
     @classmethod
-    def findAllDevice(cls) -> list[Device]:
+    def findAllDevice(cls) -> List[Device]:
         with db_session:
-            return Device.select(o for o in Device)[:]
+            return Device.select()
     
     @classmethod
     def insert(cls, serialNum: str, status: int):
@@ -16,7 +17,7 @@ class DeviceService:
     @classmethod
     def selectByPrimaryKey(cls, id: int):
         with db_session:
-            return Device[id]
+            return Device.get(id=id)
     
     @classmethod
     def selectDeviceBySerialNum(cls, serialNum: str) -> Device:
@@ -28,4 +29,3 @@ class DeviceService:
         with db_session:
             o = Device[id]
             o.status = status
-        

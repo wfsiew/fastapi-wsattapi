@@ -1,5 +1,8 @@
 from fastapi import Depends, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from app.services.deviceservice import DeviceService
+from app.entities import *
+from app.services.personservice import PersonService
 
 import websocket, json
 
@@ -15,6 +18,26 @@ app.add_middleware(
 )
 
 wsurl = 'ws://192.168.5.164:7788'
+
+@app.get('/device')
+async def getalldevice():
+    lq = DeviceService.findAllDevice()
+    lx = [DeviceModel.fromOrm(o) for o in lq]
+    return {
+        'code': 100,
+        'msg': 'success',
+        'device': lx
+    }
+    
+@app.get('/enrollinfo')
+async def getallenrollinfo():
+    lq = PersonService.selectAll()
+    lx = [PersonModel.fromOrm(o) for o in lq]
+    return {
+        'code': 100,
+        'msg': 'success',
+        'enrollInfo': lx
+    }
 
 @app.get('/getalllog')
 async def getalllog():
