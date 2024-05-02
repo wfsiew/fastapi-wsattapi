@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.services.deviceservice import DeviceService
 from app.entities import *
 from app.services.personservice import PersonService
+from app.services.recordsservice import RecordsService
 
 import websocket, json
 
@@ -39,6 +40,84 @@ async def getallenrollinfo():
         'enrollInfo': lx
     }
 
+@app.get('/sendws')
+async def getuserlist():
+    ws = websocket.WebSocket()
+    ws.connect(wsurl)
+    m = {
+        'cmd': 'getuserlist',
+        'stn': True,
+        'deviceSn': 'ZXRL12098608'
+    }
+    ws.send(json.dumps(m))
+    ws.close()
+    return {
+        'code': 100,
+        'msg': 'success'
+    }
+    
+@app.get('/sendgetuserinfo')
+async def sendgetuserinfo(enrollid: int, backupnum: int):
+    ws = websocket.WebSocket()
+    ws.connect(wsurl)
+    m = {
+        'cmd': 'getuserinfo',
+        'enrollid': enrollid,
+        'backupnum': backupnum,
+        'deviceSn': 'ZXRL12098608'
+    }
+    ws.send(json.dumps(m))
+    ws.close()
+    return {
+        'code': 100,
+        'msg': 'success'
+    }
+    
+@app.get('/setpersontodevice')
+async def setpersontodevice():
+    ws = websocket.WebSocket()
+    ws.connect(wsurl)
+    m = {
+        'cmd': 'setpersontodevice',
+        'deviceSn': 'ZXRL12098608'
+    }
+    ws.send(json.dumps(m))
+    ws.close()
+    return {
+        'code': 100,
+        'msg': 'success'
+    }
+    
+@app.get('/setusernametodevice')
+async def setusernametodevice():
+    ws = websocket.WebSocket()
+    ws.connect(wsurl)
+    m = {
+        'cmd': 'setusernametodevice',
+        'deviceSn': 'ZXRL12098608'
+    }
+    ws.send(json.dumps(m))
+    ws.close()
+    return {
+        'code': 100,
+        'msg': 'success'
+    }
+    
+@app.get('/getdeviceinfo')
+async def getdeviceinfo():
+    ws = websocket.WebSocket()
+    ws.connect(wsurl)
+    m = {
+        'cmd': 'getdevinfo',
+        'deviceSn': 'ZXRL12098608'
+    }
+    ws.send(json.dumps(m))
+    ws.close()
+    return {
+        'code': 100,
+        'msg': 'success'
+    }
+    
 @app.get('/getalllog')
 async def getalllog():
     ws = websocket.WebSocket()
@@ -70,36 +149,13 @@ async def getnewlog():
         'code': 100,
         'msg': 'success'
     }
-
-@app.get('/getuserinfo')
-async def getuserinfo(enrollid: int, backupnum: int):
-    ws = websocket.WebSocket()
-    ws.connect(wsurl)
-    m = {
-        'cmd': 'getuserinfo',
-        'enrollid': enrollid,
-        'backupnum': backupnum,
-        'deviceSn': 'ZXRL12098608'
-    }
-    ws.send(json.dumps(m))
-    ws.close()
+    
+@app.get('/records')
+async def getalllogfromdb(pn: int = 1):
+    lq = RecordsService.selectAllRecords()
+    lx = [RecordsModel.fromOrm(o) for o in lq]
     return {
         'code': 100,
-        'msg': 'success'
-    }
-
-@app.get('/getuserlist')
-async def getuserlist():
-    ws = websocket.WebSocket()
-    ws.connect(wsurl)
-    m = {
-        'cmd': 'getuserlist',
-        'stn': True,
-        'deviceSn': 'ZXRL12098608'
-    }
-    ws.send(json.dumps(m))
-    ws.close()
-    return {
-        'code': 100,
-        'msg': 'success'
+        'msg': 'success',
+        'records': lx
     }

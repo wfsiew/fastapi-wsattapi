@@ -89,6 +89,7 @@ class Records(db.Entity):
     image = Optional(str, max_len=255)
     
 db.generate_mapping(create_tables=True)
+sql_debug(True)
 
 @dataclass
 class DeviceModel:
@@ -137,15 +138,29 @@ class PersonModel:
     
 @dataclass
 class RecordsModel:
-    id = int
-    enrollId = int
-    recordsTime = str
-    mode = int
-    intout = int
-    event = int
-    deviceSerialNum = str
-    temperature = float
-    image = str
+    id: int
+    enrollId: int
+    recordsTime: str
+    mode: int
+    intout: int
+    event: int
+    deviceSerialNum: str
+    temperature: float
+    image: str
     
     def __init__(self):
         pass
+    
+    @classmethod
+    def fromOrm(cls, rec: Records):
+        o = RecordsModel()
+        o.id = rec.id
+        o.enrollId = rec.enrollId
+        o.recordsTime = rec.recordsTime
+        o.mode = rec.mode
+        o.intout = rec.intout
+        o.event = rec.event
+        o.deviceSerialNum = rec.deviceSerialNum
+        o.temperature = rec.temperature
+        o.image = rec.image
+        return o
