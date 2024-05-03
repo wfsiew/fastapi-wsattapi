@@ -7,7 +7,7 @@ class DeviceService:
     @classmethod
     def findAllDevice(cls) -> List[Device]:
         with db_session:
-            return Device.select()
+            return Device.select()[:]
     
     @classmethod
     def insert(cls, serialNum: str, status: int):

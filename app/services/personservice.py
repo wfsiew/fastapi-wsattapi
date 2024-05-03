@@ -38,4 +38,4 @@ class PersonService:
     @classmethod
     def selectAll(cls) -> List[Person]:
         with db_session:
-            return Person.select()
+            return Person.select()[:]
