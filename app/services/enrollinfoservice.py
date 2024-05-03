@@ -1,5 +1,5 @@
 from typing import List
-from pony.orm import db_session
+from pony.orm import db_session, select
 from app.entities import EnrollInfo
 from app.models import UserInfo
 
@@ -44,8 +44,7 @@ class EnrollInfoService:
     @classmethod
     def selectByBackupnum(cls, enrollId: int, backupnum: int) -> EnrollInfo:
         with db_session:
-            o = EnrollInfo.get(enrollId=enrollId, backupnum=backupnum)
-            return o
+            return EnrollInfo.get(enrollId=enrollId, backupnum=backupnum)
         
     @classmethod
     def usersToSendDevice(cls):
@@ -75,10 +74,15 @@ class EnrollInfoService:
     @classmethod
     def selectByEnrollId(cls, enrollId: int) -> List[EnrollInfo]:
         with db_session:
-            return EnrollInfo.select(lambda o: o.enrollId == enrollId)
+            return EnrollInfo.select(lambda o: o.enrollId == enrollId)[:]
+            # n = db.select('count(*) as cnt from enrollinfo where enroll_id = $enrollId')[0]
+            # print(n)
+            # return EnrollInfo.select_by_sql('select * from enrollinfo where enroll_id = $enrollId')
         
     @classmethod
     def updateByEnrollIdAndBackupNum(cls, signatures: str, enrollId: int, backupnum: int):
         with db_session:
-            for o in EnrollInfo.select(lambda o: o.enrollId == enrollId and o.backupnum == backupnum):
+            # q = EnrollInfo.select_by_sql('select * from enrollinfo where enroll_id = $enrollId and backupnum = $backupnum')
+            q = EnrollInfo.select(lambda o: o.enrollId == enrollId and o.backupnum == backupnum)[:]
+            for o in q:
                 o.signatures = signatures

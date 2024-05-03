@@ -305,3 +305,14 @@ async def opendoor(doorNum: int):
         'code': 100,
         'msg': 'success'
     }
+    
+@app.get('/test')
+def testx():
+    lq = EnrollInfoService.selectByEnrollId(1001)
+    x = None
+    if lq is not None:
+        x = [EnrollInfoModel.fromOrm(o) for o in lq]
+    return {
+        'msg': 'success',
+        'data': x
+    }

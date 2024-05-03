@@ -119,6 +119,16 @@ class EnrollInfoModel:
     def __init__(self):
         pass
     
+    @classmethod
+    def fromOrm(cls, e: EnrollInfo):
+        o = EnrollInfoModel()
+        o.id = e.id
+        o.enrollId = e.enrollId
+        o.backupnum = e.backupnum
+        o.imagePath = e.imagePath
+        o.signatures = e.signatures
+        return o
+    
 @dataclass
 class PersonModel:
     id: int
