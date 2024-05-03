@@ -70,12 +70,12 @@ class EnrollInfoService:
     @classmethod
     def selectAll(cls) -> List[EnrollInfo]:
         with db_session:
-            return EnrollInfo.select(o for o in EnrollInfo)[:]
+            return EnrollInfo.select()
         
     @classmethod
     def selectByEnrollId(cls, enrollId: int) -> List[EnrollInfo]:
         with db_session:
-            return EnrollInfo.select(lambda o: o.enrollId == enrollId)[:]
+            return EnrollInfo.select(lambda o: o.enrollId == enrollId)
         
     @classmethod
     def updateByEnrollIdAndBackupNum(cls, signatures: str, enrollId: int, backupnum: int):

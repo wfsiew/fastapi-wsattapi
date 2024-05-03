@@ -1,11 +1,14 @@
-from fastapi import Depends, FastAPI
+from typing import Annotated, List, Union
+from fastapi import Depends, FastAPI, File, Form, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
+from app.models import PersonTemp, UserInfo
 from app.services.deviceservice import DeviceService
 from app.entities import *
 from app.services.personservice import PersonService
+from app.services.enrollinfoservice import EnrollInfoService
 from app.services.recordsservice import RecordsService
 
-import websocket, json
+import websocket, json, base64
 
 app = FastAPI(dependencies=[], title='App', description='App API description', version='1.0')
 origins = ['*']
@@ -51,6 +54,72 @@ async def getuserlist():
     }
     ws.send(json.dumps(m))
     ws.close()
+    return {
+        'code': 100,
+        'msg': 'success'
+    }
+    
+@app.post('/addperson')
+async def addperson(
+    userId: Annotated[int, Form()],
+    name: Annotated[str, Form()],
+    privilege: Annotated[int, Form()],
+    imagePath: Annotated[str, Form()] = None,
+    password: Annotated[str, Form()] = None,
+    cardNum: Annotated[str, Form()] = None,
+    pic: Annotated[UploadFile, File()] = None):
+    personTemp = PersonTemp()
+    personTemp.userId = userId
+    personTemp.name = name
+    personTemp.privilege = privilege
+    personTemp.imagePath = imagePath
+    personTemp.password = password
+    personTemp.cardNum = cardNum
+    
+    newName = ''
+    data = None
+    
+    if pic is not None:
+        newName = pic.filename
+        x = await pic.read()
+        data = base64.b64encode(x).decode('ascii')
+        
+    person = PersonModel()
+    person.id = personTemp.userId
+    person.name = personTemp.name
+    person.rollId = personTemp.privilege
+    person2 = PersonService.selectByPrimaryKey(personTemp.userId)
+    
+    if person2 is None:
+        PersonService.insert([person])
+        
+    if personTemp.password is not None:
+        enrollInfoTemp2 = EnrollInfoModel()
+        enrollInfoTemp2.id = 0
+        enrollInfoTemp2.backupnum = 10
+        enrollInfoTemp2.enrollId = personTemp.userId
+        enrollInfoTemp2.imagePath = ''
+        enrollInfoTemp2.signatures = personTemp.password
+        EnrollInfoService.insertSelective([enrollInfoTemp2])
+        
+    if personTemp.cardNum is not None:
+        enrollInfoTemp3 = EnrollInfoModel()
+        enrollInfoTemp3.id = 0
+        enrollInfoTemp3.backupnum = 11
+        enrollInfoTemp3.enrollId = personTemp.userId
+        enrollInfoTemp3.imagePath = ''
+        enrollInfoTemp3.signatures = personTemp.cardNum
+        EnrollInfoService.insertSelective([enrollInfoTemp3])
+        
+    if newName != '':
+        enrollInfoTemp = EnrollInfoModel()
+        enrollInfoTemp.id = 0
+        enrollInfoTemp.backupnum = 50
+        enrollInfoTemp.enrollId = personTemp.userId
+        enrollInfoTemp.imagePath = newName
+        enrollInfoTemp.signatures = data
+        EnrollInfoService.insertSelective([enrollInfoTemp])
+        
     return {
         'code': 100,
         'msg': 'success'
@@ -118,6 +187,39 @@ async def getdeviceinfo():
         'msg': 'success'
     }
     
+@app.get('/setoneuser')
+async def setoneuserto(enrollId: int, backupnum: int):
+    ws = websocket.WebSocket()
+    ws.connect(wsurl)
+    m = {
+        'cmd': 'setoneuser',
+        'enrollid': enrollId,
+        'backupnum': backupnum,
+        'deviceSn': 'ZXRL12098608'
+    }
+    ws.send(json.dumps(m))
+    ws.close()
+    return {
+        'code': 100,
+        'msg': 'success'
+    }
+    
+@app.get('/deletepersonfromdevice')
+async def deletedeviceuserinfo(enrollId: int):
+    ws = websocket.WebSocket()
+    ws.connect(wsurl)
+    m = {
+        'cmd': 'deleteuser',
+        'enrollid': enrollId,
+        'deviceSn': 'ZXRL12098608'
+    }
+    ws.send(json.dumps(m))
+    ws.close()
+    return {
+        'code': 100,
+        'msg': 'success'
+    }
+    
 @app.get('/getalllog')
 async def getalllog():
     ws = websocket.WebSocket()
@@ -150,6 +252,34 @@ async def getnewlog():
         'msg': 'success'
     }
     
+@app.get('/emps')
+async def getallpersonfromdb(pn: int = 1):
+    personList = PersonService.selectAll()
+    enrollList = EnrollInfoService.selectAll()
+    emps: List[UserInfo] = []
+    
+    for o in personList:
+        userInfo = UserInfo()
+        userInfo.enrollId = o.id
+        userInfo.admin = o.rollId
+        userInfo.name = o.name
+        userInfo.backupnum = 0
+        userInfo.imagePath = ''
+        userInfo.record = ''
+        
+        for x in enrollList:
+            if o.id == x.enrollId:
+                if x.backupnum == 50:
+                    userInfo.imagePath = x.imagePath
+                    
+        emps.append(userInfo)
+        
+    return {
+        'code': 100,
+        'msg': 'success',
+        'emps': emps
+    }
+    
 @app.get('/records')
 async def getalllogfromdb(pn: int = 1):
     lq = RecordsService.selectAllRecords()
@@ -158,4 +288,20 @@ async def getalllogfromdb(pn: int = 1):
         'code': 100,
         'msg': 'success',
         'records': lx
+    }
+    
+@app.get('/opendoor')
+async def opendoor(doorNum: int):
+    ws = websocket.WebSocket()
+    ws.connect(wsurl)
+    m = {
+        'cmd': 'opendoor',
+        'doornum': doorNum,
+        'deviceSn': 'ZXRL12098608'
+    }
+    ws.send(json.dumps(m))
+    ws.close()
+    return {
+        'code': 100,
+        'msg': 'success'
     }
