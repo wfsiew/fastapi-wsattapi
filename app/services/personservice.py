@@ -1,41 +1,44 @@
 from typing import List
-from pony.orm import db_session
+from tortoise import connections
+from tortoise.transactions import in_transaction
+from app.entities import Person, PersonModel
 from app.entities import Person, PersonModel
 
 class PersonService:
     
     @classmethod
-    def updateByPrimaryKeySelective(cls, record: Person):
-        cls.updateByPrimaryKey(record)
+    async def updateByPrimaryKeySelective(cls, record: Person):
+        await cls.updateByPrimaryKey(record)
             
     @classmethod
-    def updateByPrimaryKey(cls, record: Person):
-        with db_session:
-            o = Person[record.id]
-            o.name = record.name
-            o.rollId = record.rollId
+    async def updateByPrimaryKey(cls, record: Person):
+        await Person.filter(id=record.id).update(name=record.name, rollId=record.rollId)
             
     @classmethod
-    def insertSelective(cls, person: PersonModel):
-        cls.insert([person])
+    async def insertSelective(cls, person: PersonModel):
+        await cls.insert([person])
             
     @classmethod
-    def insert(cls, persons: List[PersonModel]):
-        with db_session:
-            for person in persons:
-                Person(name=person.name, rollId=person.rollId)
+    async def insert(cls, persons: List[PersonModel]):
+        for person in persons:
+            await Person.create(name=person.name, rollId=person.rollId)
             
     @classmethod
-    def deleteByPrimaryKey(cls, id: int):
-        with db_session:
-            Person[id].delete()
+    async def deleteByPrimaryKey(cls, id: int):
+        await Person.filter(id=id).delete()
             
     @classmethod
-    def selectByPrimaryKey(cls, id: int):
-        with db_session:
-            return Person.get(id=id)
+    async def selectByPrimaryKey(cls, id: int):
+        return await Person.get_or_none(id=id)
+    
+    @classmethod
+    async def countPerson(cls):
+        return await Person.all().count()
+    
+    @classmethod
+    async def selectAllPerson(cls, offset: int, limit: int):
+        return await Person.all().offset(offset).limit(limit)
         
     @classmethod
-    def selectAll(cls) -> List[Person]:
-        with db_session:
-            return Person.select()[:]
+    async def selectAll(cls):
+        return await Person.all()

@@ -1,7 +1,9 @@
 from typing import Annotated, List, Union
-from fastapi import Depends, FastAPI, File, Form, UploadFile
+from fastapi import Depends, FastAPI, File, Form, UploadFile, Response
 from fastapi.middleware.cors import CORSMiddleware
-from app.models import PersonTemp, UserInfo
+from tortoise.contrib.fastapi import register_tortoise
+from app.constants import X_TOTAL_COUNT, X_TOTAL_PAGE, PAGE_SIZE
+from app.models import Pager, PersonTemp, UserInfo
 from app.services.deviceservice import DeviceService
 from app.entities import *
 from app.services.personservice import PersonService
@@ -13,20 +15,32 @@ import websocket, json, base64
 app = FastAPI(dependencies=[], title='App', description='App API description', version='1.0')
 origins = ['*']
 
+register_tortoise(
+    app,
+    db_url="psycopg://postgres:postgres@localhost:5432/attdb",
+    modules={"models": ["app.entities"]},
+    generate_schemas=False,
+    add_exception_handlers=True,
+)
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
     allow_credentials=True,
     allow_methods=["*"],
-    allow_headers=["*"],
+    allow_headers=["*", X_TOTAL_COUNT, X_TOTAL_PAGE],
 )
 
 wsurl = 'ws://192.168.5.164:7788'
 
 @app.get('/device')
-async def getalldevice():
-    lq = DeviceService.findAllDevice()
+async def getalldevice(response: Response, page: int = 1, limit: int = PAGE_SIZE):
+    total = await DeviceService.countDevice()
+    pg = Pager(total, page, limit)
+    lq = await DeviceService.findAllDevice(pg.lowerbound, pg.pagesize)
     lx = [DeviceModel.fromOrm(o) for o in lq]
+    response.headers[X_TOTAL_COUNT] = str(total)
+    response.headers[X_TOTAL_PAGE] = str(pg.totalpages)
     return {
         'code': 100,
         'msg': 'success',
@@ -34,9 +48,13 @@ async def getalldevice():
     }
     
 @app.get('/enrollinfo')
-async def getallenrollinfo():
-    lq = PersonService.selectAll()
+async def getallenrollinfo(response: Response, page: int = 1, limit: int = PAGE_SIZE):
+    total = await PersonService.countPerson()
+    pg = Pager(total, page, limit)
+    lq = await PersonService.selectAllPerson(pg.lowerbound, pg.pagesize)
     lx = [PersonModel.fromOrm(o) for o in lq]
+    response.headers[X_TOTAL_COUNT] = str(total)
+    response.headers[X_TOTAL_PAGE] = str(pg.totalpages)
     return {
         'code': 100,
         'msg': 'success',
@@ -88,10 +106,10 @@ async def addperson(
     person.id = personTemp.userId
     person.name = personTemp.name
     person.rollId = personTemp.privilege
-    person2 = PersonService.selectByPrimaryKey(personTemp.userId)
+    person2 = await PersonService.selectByPrimaryKey(personTemp.userId)
     
     if person2 is None:
-        PersonService.insert([person])
+        await PersonService.insert([person])
         
     if personTemp.password is not None:
         enrollInfoTemp2 = EnrollInfoModel()
@@ -100,7 +118,7 @@ async def addperson(
         enrollInfoTemp2.enrollId = personTemp.userId
         enrollInfoTemp2.imagePath = ''
         enrollInfoTemp2.signatures = personTemp.password
-        EnrollInfoService.insertSelective([enrollInfoTemp2])
+        await EnrollInfoService.insertSelective([enrollInfoTemp2])
         
     if personTemp.cardNum is not None:
         enrollInfoTemp3 = EnrollInfoModel()
@@ -109,7 +127,7 @@ async def addperson(
         enrollInfoTemp3.enrollId = personTemp.userId
         enrollInfoTemp3.imagePath = ''
         enrollInfoTemp3.signatures = personTemp.cardNum
-        EnrollInfoService.insertSelective([enrollInfoTemp3])
+        await EnrollInfoService.insertSelective([enrollInfoTemp3])
         
     if newName != '':
         enrollInfoTemp = EnrollInfoModel()
@@ -118,7 +136,7 @@ async def addperson(
         enrollInfoTemp.enrollId = personTemp.userId
         enrollInfoTemp.imagePath = newName
         enrollInfoTemp.signatures = data
-        EnrollInfoService.insertSelective([enrollInfoTemp])
+        await EnrollInfoService.insertSelective([enrollInfoTemp])
         
     return {
         'code': 100,
@@ -253,10 +271,15 @@ async def getnewlog():
     }
     
 @app.get('/emps')
-async def getallpersonfromdb(pn: int = 1):
-    personList = PersonService.selectAll()
-    enrollList = EnrollInfoService.selectAll()
+async def getallpersonfromdb(response: Response, page: int = 1, limit: int = PAGE_SIZE):
+    total = await PersonService.countPerson()
+    pg = Pager(total, page, limit)
+    personList = await PersonService.selectAllPerson(pg.lowerbound, pg.pagesize)
+    lenrollid = [o.id for o in personList]
+    enrollList = await EnrollInfoService.selectAllByEnrollId(lenrollid)
     emps: List[UserInfo] = []
+    response.headers[X_TOTAL_COUNT] = str(total)
+    response.headers[X_TOTAL_PAGE] = str(pg.totalpages)
     
     for o in personList:
         userInfo = UserInfo()
@@ -268,9 +291,8 @@ async def getallpersonfromdb(pn: int = 1):
         userInfo.record = ''
         
         for x in enrollList:
-            if o.id == x.enrollId:
-                if x.backupnum == 50:
-                    userInfo.imagePath = x.imagePath
+            if x.backupnum == 50:
+                userInfo.imagePath = x.imagePath
                     
         emps.append(userInfo)
         
@@ -281,9 +303,13 @@ async def getallpersonfromdb(pn: int = 1):
     }
     
 @app.get('/records')
-async def getalllogfromdb(pn: int = 1):
-    lq = RecordsService.selectAllRecords()
+async def getalllogfromdb(response: Response, page: int = 1, limit: int = PAGE_SIZE):
+    total = await RecordsService.countRecords()
+    pg = Pager(total, page, limit)
+    lq = await RecordsService.selectAllRecords(pg.lowerbound, pg.pagesize)
     lx = [RecordsModel.fromOrm(o) for o in lq]
+    response.headers[X_TOTAL_COUNT] = str(total)
+    response.headers[X_TOTAL_PAGE] = str(pg.totalpages)
     return {
         'code': 100,
         'msg': 'success',
@@ -307,8 +333,8 @@ async def opendoor(doorNum: int):
     }
     
 @app.get('/test')
-def testx():
-    lq = EnrollInfoService.selectByEnrollId(1001)
+async def testx():
+    lq = await EnrollInfoService.selectAllByEnrollId([1009, 1001])
     x = None
     if lq is not None:
         x = [EnrollInfoModel.fromOrm(o) for o in lq]

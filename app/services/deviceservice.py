@@ -1,31 +1,29 @@
-from typing import List
-from pony.orm import db_session
+from tortoise import connections
+from tortoise.transactions import in_transaction
 from app.entities import Device
 
 class DeviceService:
     
     @classmethod
-    def findAllDevice(cls) -> List[Device]:
-        with db_session:
-            return Device.select()[:]
+    async def countDevice(cls):
+        return await Device.all().count()
     
     @classmethod
-    def insert(cls, serialNum: str, status: int):
-        with db_session:
-            Device(serialNum=serialNum, status=status)
+    async def findAllDevice(cls, offset: int, limit: int):
+        return await Device.all().offset(offset).limit(limit)
+    
+    @classmethod
+    async def insert(cls, serialNum: str, status: int):
+        await Device.create(serialNum=serialNum, status=status)
 
     @classmethod
-    def selectByPrimaryKey(cls, id: int):
-        with db_session:
-            return Device.get(id=id)
+    async def selectByPrimaryKey(cls, id: int):
+        return await Device.get_or_none(id=id)
     
     @classmethod
-    def selectDeviceBySerialNum(cls, serialNum: str) -> Device:
-        with db_session:
-            return Device.get(serialNum=serialNum)
+    async def selectDeviceBySerialNum(cls, serialNum: str):
+        return await Device.get_or_none(serialNum=serialNum)
     
     @classmethod
-    def updateStatusByPrimaryKey(cls, id: int, status: int):
-        with db_session:
-            o = Device[id]
-            o.status = status
+    async def updateStatusByPrimaryKey(cls, id: int, status: int):
+        await Device.filter(id=id).update(status=status)
