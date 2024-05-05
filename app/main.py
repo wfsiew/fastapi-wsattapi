@@ -291,6 +291,8 @@ async def getallpersonfromdb(response: Response, page: int = 1, limit: int = PAG
         userInfo.record = ''
         
         for x in enrollList:
+            userInfo.backupnum = x.backupnum
+            userInfo.record = x.signatures
             if x.backupnum == 50:
                 userInfo.imagePath = x.imagePath
                     
