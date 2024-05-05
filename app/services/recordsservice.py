@@ -10,9 +10,13 @@ class RecordsService:
         await Records.filter(id=id).delete()
         
     @classmethod
+    async def clear(cls):
+        await Records.all().delete()
+        
+    @classmethod
     async def insert(cls, records: List[RecordsModel]):
         for record in records:
-            await Records.create(
+            await Records.update_or_create(
                 enrollId=record.enrollId, 
                 recordsTime=record.recordsTime, 
                 mode=record.mode, 
