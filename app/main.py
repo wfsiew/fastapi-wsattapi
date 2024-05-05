@@ -332,6 +332,36 @@ async def opendoor(doorNum: int):
         'msg': 'success'
     }
     
+@app.get('/cleanlog')
+async def cleanlog():
+    ws = websocket.WebSocket()
+    ws.connect(wsurl)
+    m = {
+        'cmd': 'cleanlog',
+        'deviceSn': 'ZXRL12098608'
+    }
+    ws.send(json.dumps(m))
+    ws.close()
+    return {
+        'code': 100,
+        'msg': 'success'
+    }
+    
+@app.get('/cleanuser')
+async def cleanuser():
+    ws = websocket.WebSocket()
+    ws.connect(wsurl)
+    m = {
+        'cmd': 'cleanuser',
+        'deviceSn': 'ZXRL12098608'
+    }
+    ws.send(json.dumps(m))
+    ws.close()
+    return {
+        'code': 100,
+        'msg': 'success'
+    }
+    
 @app.get('/test')
 async def testx():
     lq = await EnrollInfoService.selectAllByEnrollId([1009, 1001])
