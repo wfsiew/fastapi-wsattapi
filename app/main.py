@@ -10,10 +10,9 @@ from app.services.personservice import PersonService
 from app.services.enrollinfoservice import EnrollInfoService
 from app.services.recordsservice import RecordsService
 
-import websocket, json, base64
+import websocket, json, base64, duckdb
 
 app = FastAPI(dependencies=[], title='App', description='App API description', version='1.0')
-origins = ['*']
 
 register_tortoise(
     app,
@@ -25,13 +24,19 @@ register_tortoise(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,
+    allow_origins=['*'],
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*", X_TOTAL_COUNT, X_TOTAL_PAGE],
+    allow_methods=['*'],
+    allow_headers=['*'],
+    expose_headers=['*'],
 )
 
 wsurl = 'ws://192.168.5.164:7788'
+
+@app.get('/data')
+async def data():
+    duckdb.sql("SELECT 42").show()
+    return 'ok'
 
 @app.get('/device')
 async def getalldevice(response: Response, page: int = 1, limit: int = PAGE_SIZE):
