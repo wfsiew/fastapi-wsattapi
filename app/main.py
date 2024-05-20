@@ -10,7 +10,7 @@ from app.services.personservice import PersonService
 from app.services.enrollinfoservice import EnrollInfoService
 from app.services.recordsservice import RecordsService
 
-import websocket, json, base64, duckdb
+import websocket, json, base64
 
 app = FastAPI(dependencies=[], title='App', description='App API description', version='1.0')
 
@@ -32,11 +32,6 @@ app.add_middleware(
 )
 
 wsurl = 'ws://192.168.5.164:7788'
-
-@app.get('/data')
-async def data():
-    duckdb.sql("SELECT 42").show()
-    return 'ok'
 
 @app.get('/device')
 async def getalldevice(response: Response, page: int = 1, limit: int = PAGE_SIZE):
